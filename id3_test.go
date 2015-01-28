@@ -3,7 +3,11 @@
 // license that can be found in the LICENSE file.
 package id3
 
-import "testing"
+import (
+	"errors"
+	"fmt"
+	"testing"
+)
 
 type testData struct {
 	name        string
@@ -16,124 +20,121 @@ type testData struct {
 }
 
 func TestParse(t *testing.T) {
-	id3v2Files := []testData{
-		testData{"Simple MP3",
+	id3v2Files := []*testData{
+		&testData{"Simple MP3",
 			"test/test.mp3",
 			"Paloalto",
 			"Nice Life (Feat. Basick)",
 			"Chief Life",
 			"✓",
 			"✓"},
-		/*
-				testData{"Dummy Frames",
-					"test/dummyframes.mp3",
-					"ARTIST123456789012345678901234",
-					"TITLE1234567890123456789012345",
-					"ALBUM1234567890123456789012345",
-					"",
-					"COMMENT123456789012345678901"},
-				testData{"Incomplete MPEG Frame",
-					"test/incompletempegframe.mp3",
-					"ARTIST123456789012345678901234",
-					"TITLE1234567890123456789012345",
-					"ALBUM1234567890123456789012345",
-					"",
-					"COMMENT123456789012345678901"},
-				testData{"Obsolete (No Image)",
-					"test/obsolete-noimage.mp3",
-					"ARTISTABCDEFGHIJKLMNOPQRSTUVWXYZ",
-					"NAMEABCDEFGHIJKLMNOPQRSTUVWXYZ",
-					"ALBUMNAMEABCDEFGHIJKLMNOPQRSTUVWXYZ",
-					"",
-					""},
-				testData{"Obsolete",
-					"test/obsolete.mp3",
-					"ARTIST1234567890123456789012345678901234567890",
-					"NAME1234567890123456789012345678901234567890",
-					"ALBUM1234567890123456789012345678901234567890",
-					"",
-					""},
-				testData{"id3v1 and id3v2.3 (Custom Tags)",
-					"test/v1andv23andcustomtags.mp3",
-					"ARTIST123456789012345678901234",
-					"TITLE1234567890123456789012345",
-					"ALBUM1234567890123456789012345",
-					"",
-					"COMMENT123456789012345678901"},
-				testData{"id3v1 and id3v2.3", "test/v1andv23tags.mp3",
-					"ARTIST123456789012345678901234",
-					"TITLE1234567890123456789012345",
-					"ALBUM1234567890123456789012345",
-					"",
-					"COMMENT123456789012345678901"},
 
+		&testData{"Dummy Frames",
+			"test/dummyframes.mp3",
+			"ARTIST123456789012345678901234",
+			"TITLE1234567890123456789012345",
+			"ALBUM1234567890123456789012345",
+			"",
+			"COMMENT123456789012345678901"},
+		&testData{"Incomplete MPEG Frame",
+			"test/incompletempegframe.mp3",
+			"ARTIST123456789012345678901234",
+			"TITLE1234567890123456789012345",
+			"ALBUM1234567890123456789012345",
+			"",
+			"COMMENT123456789012345678901"},
+		&testData{"Obsolete (No Image)",
+			"test/obsolete-noimage.mp3",
+			"ARTISTABCDEFGHIJKLMNOPQRSTUVWXYZ",
+			"NAMEABCDEFGHIJKLMNOPQRSTUVWXYZ",
+			"ALBUMNAMEABCDEFGHIJKLMNOPQRSTUVWXYZ",
+			"",
+			""},
+		&testData{"Obsolete",
+			"test/obsolete.mp3",
+			"ARTIST1234567890123456789012345678901234567890",
+			"NAME1234567890123456789012345678901234567890",
+			"ALBUM1234567890123456789012345678901234567890",
+			"",
+			""},
+		&testData{"id3v1 and id3v2.3 (Custom Tags)",
+			"test/v1andv23andcustomtags.mp3",
+			"ARTIST123456789012345678901234",
+			"TITLE1234567890123456789012345",
+			"ALBUM1234567890123456789012345",
+			"",
+			"COMMENT123456789012345678901"},
+		&testData{"id3v1 and id3v2.3", "test/v1andv23tags.mp3",
+			"ARTIST123456789012345678901234",
+			"TITLE1234567890123456789012345",
+			"ALBUM1234567890123456789012345",
+			"",
+			"COMMENT123456789012345678901"},
 
-			testData{"id3v1 and id3v2.3 (Album Image & Little-Endian UTF-16)",
-				"test/v1andv23tagswithalbumimage-utf16le.mp3",
-				"ARTIST123456789012345678901234",
-				"TITLE1234567890123456789012345",
-				"ALBUM1234567890123456789012345",
-				"ID3v1 Comment",
-				"COMMENT123456789012345678901"},
+		&testData{"id3v1 and id3v2.3 (Album Image & Little-Endian UTF-16)",
+			"test/v1andv23tagswithalbumimage-utf16le.mp3",
+			"ARTIST123456789012345678901234",
+			"TITLE1234567890123456789012345",
+			"ALBUM1234567890123456789012345",
+			"ID3v1 Comment",
+			"COMMENT123456789012345678901"},
 
+		&testData{"id3v1 and id3v2.3 (Album Image)",
+			"test/v1andv23tagswithalbumimage.mp3",
+			"ARTIST123456789012345678901234",
+			"TITLE1234567890123456789012345",
+			"ALBUM1234567890123456789012345",
+			"",
+			"COMMENT123456789012345678901"},
+		&testData{"id3v1 and id3v2.4",
+			"test/v1andv24tags.mp3",
+			"ARTIST123456789012345678901234",
+			"TITLE1234567890123456789012345",
+			"ALBUM1234567890123456789012345",
+			"",
+			"COMMENT123456789012345678901"},
 
-					testData{"id3v1 and id3v2.3 (Album Image)",
-						"test/v1andv23tagswithalbumimage.mp3",
-						"ARTIST123456789012345678901234",
-						"TITLE1234567890123456789012345",
-						"ALBUM1234567890123456789012345",
-						"",
-						"COMMENT123456789012345678901"},
-					testData{"id3v1 and id3v2.4",
-						"test/v1andv24tags.mp3",
-						"ARTIST123456789012345678901234",
-						"TITLE1234567890123456789012345",
-						"ALBUM1234567890123456789012345",
-						"",
-						"COMMENT123456789012345678901"},
+		&testData{"id3v2.3",
+			"test/v23tag.mp3",
+			"ARTIST123456789012345678901234",
+			"TITLE1234567890123456789012345",
+			"ALBUM1234567890123456789012345",
+			"",
+			"COMMENT123456789012345678901"},
 
-					testData{"id3v2.3",
-						"test/v23tag.mp3",
-						"ARTIST123456789012345678901234",
-						"TITLE1234567890123456789012345",
-						"ALBUM1234567890123456789012345",
-						"",
-						"COMMENT123456789012345678901"},
+		&testData{"id3v2.3 (Chapters)",
+			"test/v23tagwithchapters.mp3",
+			"Paloalto",
+			"Nice Life (Feat. Basick)",
+			"Chief Life",
+			"✓",
+			"✓"},
 
-					testData{"id3v2.3 (Chapters)",
-						"test/v23tagwithchapters.mp3",
-						"Paloalto",
-						"Nice Life (Feat. Basick)",
-						"Chief Life",
-						"✓",
-						"✓"},
-
-		*/
-		testData{"id3v2.3 (Unicode)",
+		&testData{"id3v2.3 (Unicode)",
 			"test/v23unicodetags.mp3",
 			"γειά σου",
 			"中文",
 			"こんにちは",
 			"",
 			""},
-		/*
-			testData{"id3v2.4 (Album Image)",
-				"test/v24tagswithalbumimage.mp3",
-				"ARTIST123456789012345678901234",
-				"TITLE1234567890123456789012345",
-				"ALBUM1234567890123456789012345",
-				"",
-				"COMMENT123456789012345678901"},
-			testData{"iTunes Comment",
-				"test/withitunescomment.mp3",
-				"ARTIST123456789012345678901234",
-				"TITLE1234567890123456789012345",
-				"ALBUM1234567890123456789012345",
-				"",
-				"COMMENT123456789012345678901"},*/
+
+		&testData{"id3v2.4 (Album Image)",
+			"test/v24tagswithalbumimage.mp3",
+			"ARTIST123456789012345678901234",
+			"TITLE1234567890123456789012345",
+			"ALBUM1234567890123456789012345",
+			"",
+			"COMMENT123456789012345678901"},
+		&testData{"iTunes Comment",
+			"test/withitunescomment.mp3",
+			"ARTIST123456789012345678901234",
+			"TITLE1234567890123456789012345",
+			"ALBUM1234567890123456789012345",
+			"",
+			"COMMENT123456789012345678901"},
 	}
 	for _, v := range id3v2Files {
-		_, err := Read(v.path)
+		err := testReadV2(v, t)
 		if err != nil {
 			t.Errorf("%v: %v", v.name, err)
 		}
@@ -182,6 +183,50 @@ func TestParse(t *testing.T) {
 			t.Errorf("%v: %v", v.name, err)
 		}
 	}
+}
+
+func testReadV2(testData *testData, t *testing.T) error {
+	fmt.Println(testData.path)
+	tag, err := Read(testData.path)
+	if err != nil {
+		return err
+	}
+
+	if s := tag.Artist(); s != testData.artist {
+		return errors.New(fmt.Sprintf("incorrect artist, \"%v\", expected \"%v\"", s, testData.artist))
+	}
+
+	if s := tag.Title(); s != testData.title {
+		return errors.New(fmt.Sprintf("incorrect title, \"%v\", expected \"%v\"", s, testData.title))
+	}
+
+	if s := tag.Album(); s != testData.album {
+		return errors.New(fmt.Sprintf("incorrect album, \"%v\", expected \"%v\"", s, testData.album))
+	}
+
+	/*parsedFrame := file.Frame("COMM")
+	if parsedFrame == nil {
+		if testData.comment != "" {
+			return errors.New(fmt.Sprintf("missing comment, expected \"%v\"", testData.comment))
+		}
+		return nil
+	}
+	resultFrame, ok := parsedFrame.(*v2.UnsynchTextFrame)
+	if !ok {
+		return errors.New("couldn't cast frame")
+	}
+
+	actual := resultFrame.Description()
+
+	if testData.description != actual {
+		return errors.New(fmt.Sprintf("incorrect description, \"%v\", expected \"%v\"", actual, testData.description))
+	}
+
+	actual = resultFrame.Text()
+	if testData.comment != actual {
+		return errors.New(fmt.Sprintf("incorrect comment, \"%v\", expected \"%v\"", actual, testData.comment))
+	}*/
+	return nil
 }
 
 /*func testReadV2(testData *testData, t *testing.T) error {

@@ -16,7 +16,7 @@ const (
 
 type frameFactory struct {
 	description string
-	maker       func(*frameHeader, []byte) (Frame, error)
+	maker       func(*Tag, *frameHeader, []byte) (Frame, error)
 }
 
 type versionParams struct {
@@ -100,7 +100,7 @@ func (tag *Tag) readV2(framesSize uint32, params *versionParams, r io.ReadSeeker
 			glog.Errorf("Unknown tag: %v", string(frameId[:]))
 			continue
 		}
-		frame, err := factory.maker(newFrameHeader(string(frameId), statusFlags, formatFlags, frameLength), data)
+		frame, err := factory.maker(tag, newFrameHeader(string(frameId), statusFlags, formatFlags, frameLength), data)
 		if err != nil {
 			glog.Errorf("Error parsing tag: %v", err)
 			continue
@@ -110,9 +110,16 @@ func (tag *Tag) readV2(framesSize uint32, params *versionParams, r io.ReadSeeker
 			glog.Infof("DATA: %v", hex.EncodeToString(frame.Bytes()))
 		case *TextFrame:
 			glog.Infof("TEXT %v: %v", len(t.String()), t.String())
-			/*for index, runeValue := range t.String() {
-				glog.Infof("%#U starts at byte position %d\n", runeValue, index)
-			}*/
+		/*for index, runeValue := range t.String() {
+			glog.Infof("%#U starts at byte position %d\n", runeValue, index)
+		}*/
+		case *PictureFrame:
+			glog.Infof("PIC %v: %v", t.String(), len(t.Bytes()))
+			//glog.Infof("PICDATA: %v", hex.EncodeToString(t.Bytes()))
+			/*out := fmt.Sprintf("%v.png", time.Now().UnixNano())
+			glog.Infof("Wrote %v: %v", out, len(t.Bytes()))
+			ioutil.WriteFile(out, t.Bytes(), 0)*/
+
 		}
 		tag.addFrame(frame)
 

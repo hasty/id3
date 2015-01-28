@@ -6,7 +6,7 @@ type TextFrame struct {
 	value string
 }
 
-func newTextFrame(header *frameHeader, data []byte) (Frame, error) {
+func newTextFrame(tag *Tag, header *frameHeader, data []byte) (Frame, error) {
 	tf := &TextFrame{}
 	tf.header = header
 	val, err := readString(data)
@@ -15,6 +15,14 @@ func newTextFrame(header *frameHeader, data []byte) (Frame, error) {
 	}
 	tf.value = val
 	return tf, nil
+}
+
+func simpleTextFrame(tag *Tag, id string, val string) Frame {
+	tf := &TextFrame{}
+
+	tf.header = newFrameHeader(id, 0, 0, uint32(len(val)))
+	tf.value = val
+	return tf
 }
 
 func (tf *TextFrame) String() string {

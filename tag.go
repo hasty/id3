@@ -4,7 +4,13 @@ type Tag struct {
 	Header         *Header
 	ExtendedHeader *ExtendedHeader
 
-	frameMap map[string][]Frame
+	frameMap      map[string][]Frame
+	titleFrame    Frame
+	artistFrame   Frame
+	albumFrame    Frame
+	yearFrame     Frame
+	genreFrame    Frame
+	commentFrames []Frame
 }
 
 func newTag(header *Header, extendedHeader *ExtendedHeader) *Tag {
@@ -15,10 +21,81 @@ func newTag(header *Header, extendedHeader *ExtendedHeader) *Tag {
 	}
 }
 
+func emptyTag() *Tag {
+	return &Tag{
+		frameMap: make(map[string][]Frame),
+	}
+}
+
 func (tag *Tag) addFrame(frame Frame) {
-	frames, ok := tag.frameMap[frame.Id()]
+	id := frame.Id()
+	frames, ok := tag.frameMap[id]
 	frames = append(frames, frame)
 	if !ok {
-		tag.frameMap[frame.Id()] = frames
+		tag.frameMap[id] = frames
 	}
+	switch id {
+	case "TT2", "TIT2":
+		tag.titleFrame = frame
+	case "TP1", "TPE1":
+		tag.artistFrame = frame
+	case "TAL", "TALB":
+		tag.albumFrame = frame
+	case "TYE", "TYER":
+		tag.yearFrame = frame
+	case "TCO", "TCON":
+		tag.genreFrame = frame
+	case "COM", "COMM":
+		tag.commentFrames = append(tag.commentFrames, frame)
+	}
+}
+
+func (tag *Tag) Title() string {
+	if tag.titleFrame != nil {
+		return tag.titleFrame.String()
+	}
+	return ""
+}
+
+func (tag *Tag) Artist() string {
+	if tag.artistFrame != nil {
+		return tag.artistFrame.String()
+	}
+	return ""
+
+}
+
+func (tag *Tag) Album() string {
+	if tag.albumFrame != nil {
+		return tag.albumFrame.String()
+	}
+	return ""
+
+}
+
+func (tag *Tag) Year() string {
+	if tag.yearFrame != nil {
+		return tag.yearFrame.String()
+	}
+	return ""
+
+}
+
+func (tag *Tag) Genre() string {
+	if tag.genreFrame != nil {
+		return tag.genreFrame.String()
+	}
+	return ""
+
+}
+
+func (tag *Tag) Comments() []string {
+	if len(tag.commentFrames) > 0 {
+		var comments []string
+		for _, comment := range tag.commentFrames {
+			comments = append(comments, comment.String())
+		}
+		return comments
+	}
+	return []string{}
 }

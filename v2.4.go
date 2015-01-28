@@ -7,7 +7,7 @@ var version24Params = &versionParams{
 	sizeUnsynchronized: true,
 	frames: map[string]*frameFactory{
 		"AENC": &frameFactory{description: "Audio encryption", maker: newDataFrame},
-		// TODO: "APIC": &frameFactory{description: "Attached picture", maker: ParseImageFrame},
+		"APIC": &frameFactory{description: "Attached picture", maker: newPictureFrame},
 		// TODO: "COMM": &frameFactory{description: "Comments", maker: ParseUnsynchTextFrame},
 		"COMR": &frameFactory{description: "Commercial frame", maker: newDataFrame},
 		"ENCR": &frameFactory{description: "Encryption method registration", maker: newDataFrame},

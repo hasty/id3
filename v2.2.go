@@ -17,7 +17,7 @@ var version22Params = &versionParams{
 		"LNK": &frameFactory{description: "Linked information", maker: newDataFrame},
 		"MCI": &frameFactory{description: "Music CD Identifier", maker: newDataFrame},
 		"MLL": &frameFactory{description: "MPEG location lookup table", maker: newDataFrame},
-		"PIC": &frameFactory{description: "Attached picture", maker: newDataFrame},
+		"PIC": &frameFactory{description: "Attached picture", maker: newPictureFrame},
 		"POP": &frameFactory{description: "Popularimeter", maker: newDataFrame},
 		"REV": &frameFactory{description: "Reverb", maker: newDataFrame},
 		"RVA": &frameFactory{description: "Relative volume adjustment", maker: newDataFrame},

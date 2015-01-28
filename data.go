@@ -10,7 +10,7 @@ type DataFrame struct {
 	value []byte
 }
 
-func newDataFrame(header *frameHeader, data []byte) (Frame, error) {
+func newDataFrame(tag *Tag, header *frameHeader, data []byte) (Frame, error) {
 	df := &DataFrame{}
 	df.header = header
 	df.value = data

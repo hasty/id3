@@ -19,7 +19,8 @@ func Read(path string) (*Tag, error) {
 	header, err := newHeader(r)
 	if err != nil {
 		if err == ErrNoHeader {
-			// TODO: Look for idv1
+			return readv1(r)
+
 		}
 		return nil, err
 	}

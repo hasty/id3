@@ -3,6 +3,7 @@ package id3
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"io/ioutil"
 
 	"golang.org/x/text/encoding"
@@ -35,6 +36,38 @@ func readString(data []byte) (string, error) {
 	if l < 2 {
 		return "", nil
 	}
+	textEncoding, encoding, err := extractEncoding(l, data)
+	if err != nil {
+		return "", err
+	}
+	data, _, err = trimForEncoding(l, data, textEncoding, true)
+	if err != nil {
+		return "", err
+	}
+	return decodeString(data, encoding)
+}
+
+/*func readTerminatedString(data []byte) (string, encoding.Encoding, int, error) {
+	l := len(data)
+	if l < 2 {
+		return "", nil, 0, nil
+	}
+	textEncoding, encoding, err := extractEncoding(l, data)
+	if err != nil {
+		return "", nil, 0, err
+	}
+	data, i, err := trimForEncoding(l, data, textEncoding)
+	if err != nil {
+		return "", nil, 0, err
+	}
+	s, err := decodeString(data, encoding)
+	if err != nil {
+		return "", nil, 0, err
+	}
+	return s, encoding, i, nil
+}*/
+
+func extractEncoding(l int, data []byte) (TextEncoding, encoding.Encoding, error) {
 	var encoding encoding.Encoding
 	textEncoding := TextEncoding(data[0])
 
@@ -42,7 +75,6 @@ func readString(data []byte) (string, error) {
 	case ISO88591:
 		// Technically a superset of ISO-8859-1, but we're only reading so it's ok
 		encoding = charmap.Windows1252
-		data, _ = trimToNull(l, data)
 	case UTF16:
 		if len(data) < 3 {
 			encoding = unicode.UTF16(unicode.BigEndian, unicode.IgnoreBOM)
@@ -53,15 +85,14 @@ func readString(data []byte) (string, error) {
 		} else {
 			encoding = unicode.UTF16(unicode.BigEndian, unicode.IgnoreBOM)
 		}
-		data, _ = trimToDoubleNull(l, data)
 	case UTF16BE:
 		encoding = unicode.UTF16(unicode.BigEndian, unicode.IgnoreBOM)
-		data, _ = trimToDoubleNull(l, data)
 	case UTF8:
 		encoding = nil
-		data, _ = trimToNull(l, data)
+	default:
+		return 0, nil, errors.New("unknown encoding")
 	}
-	return decodeString(data, encoding)
+	return textEncoding, encoding, nil
 }
 
 func decodeString(data []byte, encoding encoding.Encoding) (string, error) {
@@ -75,19 +106,42 @@ func decodeString(data []byte, encoding encoding.Encoding) (string, error) {
 	}
 	return string(data), nil
 }
-func trimToNull(l int, data []byte) ([]byte, int) {
-	var i int = 1
+
+func trimForEncoding(l int, data []byte, textEncoding TextEncoding, strip bool) ([]byte, int, error) {
+	var i int
+	switch textEncoding {
+	case ISO88591, UTF8:
+		data, i = trimToNull(l, data, strip)
+	case UTF16, UTF16BE:
+		data, i = trimToDoubleNull(l, data, strip)
+	default:
+		return nil, 0, errors.New("unknown encoding")
+	}
+	return data, i, nil
+}
+
+func trimToNull(l int, data []byte, strip bool) ([]byte, int) {
+	var i int
+	if strip {
+		i = 1
+	}
 	for i < l {
 		if data[i] == 0x0 {
 			break
 		}
 		i++
 	}
+	if !strip {
+		return data[0:i], i
+	}
 	return data[1:i], i
 }
 
-func trimToDoubleNull(l int, data []byte) ([]byte, int) {
-	var i int = 1
+func trimToDoubleNull(l int, data []byte, strip bool) ([]byte, int) {
+	var i int
+	if strip {
+		i = 1
+	}
 	for i < l {
 		if data[i] == 0x0 && data[i+1] == 0x0 {
 			break
@@ -96,6 +150,9 @@ func trimToDoubleNull(l int, data []byte) ([]byte, int) {
 	}
 	if i >= l {
 		i = l
+	}
+	if !strip {
+		return data[0:i], i
 	}
 	return data[1:i], i
 }
