@@ -83,7 +83,7 @@ func (pf *PictureFrame) read22(data []byte) error {
 		return err
 	}
 	pf.description, err = decodeString(description, encoding)
-	pf.data = data[5+j+1:]
+	pf.data = data[5+j:]
 	return nil
 }
 
@@ -102,7 +102,6 @@ func (pf *PictureFrame) read23(data []byte) error {
 		return err
 	}
 	pf.pictureType = PictureType(data[i])
-	i++
 
 	description, j, err := trimForEncoding(l-i, data[i:], textEncoding, false)
 	if err != nil {
@@ -110,7 +109,7 @@ func (pf *PictureFrame) read23(data []byte) error {
 	}
 	pf.description, err = decodeString(description, encoding)
 
-	pf.data = data[i+j+1:]
+	pf.data = data[i+j:]
 	return nil
 }
 

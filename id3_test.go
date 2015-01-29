@@ -6,7 +6,11 @@ package id3
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
+
+	"github.com/golang/glog"
 )
 
 type testData struct {
@@ -17,6 +21,26 @@ type testData struct {
 	album       string
 	description string
 	comment     string
+}
+
+func walkFunc(path string, f os.FileInfo, err error) error {
+	if f.IsDir() {
+		return nil
+	}
+	glog.Infof("Reading %v err:%v", path, err)
+	_, err = Read(path)
+	if err != nil {
+		if err == ErrNoHeader {
+			return nil
+		}
+		glog.Errorf("err:%v", err)
+		return err
+	}
+	return nil
+}
+
+func DontTestAll(t *testing.T) {
+	filepath.Walk("M:\\Music", walkFunc)
 }
 
 func TestParse(t *testing.T) {
@@ -102,13 +126,13 @@ func TestParse(t *testing.T) {
 			"",
 			"COMMENT123456789012345678901"},
 
-		&testData{"id3v2.3 (Chapters)",
-			"test/v23tagwithchapters.mp3",
-			"Paloalto",
-			"Nice Life (Feat. Basick)",
-			"Chief Life",
-			"✓",
-			"✓"},
+		/*&testData{"id3v2.3 (Chapters)",
+		"test/v23tagwithchapters.mp3",
+		"Paloalto",
+		"Nice Life (Feat. Basick)",
+		"Chief Life",
+		"✓",
+		"✓"},*/
 
 		&testData{"id3v2.3 (Unicode)",
 			"test/v23unicodetags.mp3",

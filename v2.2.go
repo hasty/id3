@@ -7,7 +7,7 @@ var version22Params = &versionParams{
 	frames: map[string]*frameFactory{
 		"BUF": &frameFactory{description: "Recommended buffer size", maker: newDataFrame},
 		"CNT": &frameFactory{description: "Play counter", maker: newDataFrame},
-		// TODO: "COM": &frameFactory{description: "Comments", maker: ParseUnsynchTextFrame},
+		"COM": &frameFactory{description: "Comments", maker: newFullTextFrame},
 		"CRA": &frameFactory{description: "Audio encryption", maker: newDataFrame},
 		"CRM": &frameFactory{description: "Encrypted meta frame", maker: newDataFrame},
 		"ETC": &frameFactory{description: "Event timing codes", maker: newDataFrame},
@@ -57,7 +57,7 @@ var version22Params = &versionParams{
 		"TT2": &frameFactory{description: "Title/Songname/Content description", maker: newTextFrame},
 		"TT3": &frameFactory{description: "Subtitle/Description refinement", maker: newTextFrame},
 		"TXT": &frameFactory{description: "Lyricist/text writer", maker: newTextFrame},
-		// TODO: "TXX": &frameFactory{description: "User defined text information frame", maker: ParseDescTextFrame},
+		"TXX": &frameFactory{description: "User defined text information frame", maker: newDescribedFrame},
 		"TYE": &frameFactory{description: "Year", maker: newTextFrame},
 		"UFI": &frameFactory{description: "Unique file identifier", maker: newDataFrame},
 		"ULT": &frameFactory{description: "Unsychronized lyric/text transcription", maker: newDataFrame},

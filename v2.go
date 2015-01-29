@@ -2,7 +2,6 @@ package id3
 
 import (
 	"encoding/binary"
-	"encoding/hex"
 	"io"
 	"os"
 
@@ -93,7 +92,7 @@ func (tag *Tag) readV2(framesSize uint32, params *versionParams, r io.ReadSeeker
 		}
 		i += frameLength
 
-		glog.Infof("TAG: %v, LENGTH: %v", string(frameId[:]), frameLength)
+		//glog.Infof("TAG: %v, LENGTH: %v", string(frameId[:]), frameLength)
 		//glog.Infof("DATA: %v", hex.EncodeToString(data))
 		factory, ok := params.frames[string(frameId[:])]
 		if !ok {
@@ -105,20 +104,23 @@ func (tag *Tag) readV2(framesSize uint32, params *versionParams, r io.ReadSeeker
 			glog.Errorf("Error parsing tag: %v", err)
 			continue
 		}
+
 		switch t := frame.(type) {
 		case *DataFrame:
-			glog.Infof("DATA: %v", hex.EncodeToString(frame.Bytes()))
+			//glog.Infof("DATA: %v", hex.EncodeToString(frame.Bytes()))
 		case *TextFrame:
-			glog.Infof("TEXT %v: %v", len(t.String()), t.String())
-		/*for index, runeValue := range t.String() {
-			glog.Infof("%#U starts at byte position %d\n", runeValue, index)
-		}*/
-		case *PictureFrame:
-			glog.Infof("PIC %v: %v", t.String(), len(t.Bytes()))
-			//glog.Infof("PICDATA: %v", hex.EncodeToString(t.Bytes()))
-			/*out := fmt.Sprintf("%v.png", time.Now().UnixNano())
-			glog.Infof("Wrote %v: %v", out, len(t.Bytes()))
-			ioutil.WriteFile(out, t.Bytes(), 0)*/
+		//glog.Infof("TEXT %v: %v", len(t.String()), t.String())
+		//for index, runeValue := range t.String() {
+		//	glog.Infof("%#U starts at byte position %d\n", runeValue, index)
+		//}
+		/*case *PictureFrame:
+		glog.Infof("PIC %v: %v", t.String(), len(t.Bytes()))
+		glog.Infof("PICDATA: %v", hex.EncodeToString(t.Bytes()))
+		out := fmt.Sprintf("%v.png", time.Now().UnixNano())
+		glog.Infof("Wrote %v: %v", out, len(t.Bytes()))
+		ioutil.WriteFile(out, t.Bytes(), 0)*/
+		case *FullTextFrame:
+			glog.Infof("FULLTEXT %v: %v", t.Description(), t.String())
 
 		}
 		tag.addFrame(frame)

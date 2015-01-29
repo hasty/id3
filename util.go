@@ -47,26 +47,6 @@ func readString(data []byte) (string, error) {
 	return decodeString(data, encoding)
 }
 
-/*func readTerminatedString(data []byte) (string, encoding.Encoding, int, error) {
-	l := len(data)
-	if l < 2 {
-		return "", nil, 0, nil
-	}
-	textEncoding, encoding, err := extractEncoding(l, data)
-	if err != nil {
-		return "", nil, 0, err
-	}
-	data, i, err := trimForEncoding(l, data, textEncoding)
-	if err != nil {
-		return "", nil, 0, err
-	}
-	s, err := decodeString(data, encoding)
-	if err != nil {
-		return "", nil, 0, err
-	}
-	return s, encoding, i, nil
-}*/
-
 func extractEncoding(l int, data []byte) (TextEncoding, encoding.Encoding, error) {
 	var encoding encoding.Encoding
 	textEncoding := TextEncoding(data[0])
@@ -132,9 +112,9 @@ func trimToNull(l int, data []byte, strip bool) ([]byte, int) {
 		i++
 	}
 	if !strip {
-		return data[0:i], i
+		return data[0:i], i + 1
 	}
-	return data[1:i], i
+	return data[1:i], i + 1
 }
 
 func trimToDoubleNull(l int, data []byte, strip bool) ([]byte, int) {
@@ -148,11 +128,8 @@ func trimToDoubleNull(l int, data []byte, strip bool) ([]byte, int) {
 		}
 		i += 2
 	}
-	if i >= l {
-		i = l
-	}
 	if !strip {
-		return data[0:i], i
+		return data[0:i], i + 2
 	}
-	return data[1:i], i
+	return data[1:i], i + 2
 }

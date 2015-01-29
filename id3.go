@@ -4,12 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
-
-	"github.com/golang/glog"
 )
 
 func Read(path string) (*Tag, error) {
-	glog.Infof("READING: %v", path)
+	//glog.Infof("READING: %v", path)
 
 	r, err := os.OpenFile(path, os.O_RDONLY, 0666)
 	if err != nil {
@@ -25,7 +23,7 @@ func Read(path string) (*Tag, error) {
 		return nil, err
 	}
 
-	glog.Infof("Unsynchronized: %v", header.Unsynchronized())
+	//glog.Infof("Unsynchronized: %v", header.Unsynchronized())
 
 	var extendedHeader *ExtendedHeader
 
