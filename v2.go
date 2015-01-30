@@ -1,6 +1,7 @@
 package id3
 
 import (
+	"bufio"
 	"encoding/binary"
 	"encoding/hex"
 	"io"
@@ -27,14 +28,17 @@ type versionParams struct {
 	frames             map[string]*frameFactory
 }
 
-func (tag *Tag) readV2(path string, framesSize uint32, params *versionParams, r io.ReadSeeker) error {
+func (tag *Tag) readV2(framesSize uint32, params *versionParams, r io.ReadSeeker) error {
 	var i uint32
 	var n int
 	var err error
+	br := bufio.NewReader(r)
+	frameId := make([]byte, params.frameIdSize)
+	frameSize := make([]byte, params.frameSizeSize)
+	frameFlags := make([]byte, params.frameFlagsSize)
 	for i < framesSize {
-		frameId := make([]byte, params.frameIdSize)
 
-		n, err = r.Read(frameId[:1])
+		n, err = br.Read(frameId[:1])
 		if err != nil {
 			return err
 		}
@@ -47,21 +51,19 @@ func (tag *Tag) readV2(path string, framesSize uint32, params *versionParams, r 
 			r.Seek(int64(tag.Header.paddingSize-1), os.SEEK_CUR)
 			break
 		}
-		frameSize := make([]byte, params.frameSizeSize)
-		frameFlags := make([]byte, params.frameFlagsSize)
 		var statusFlags, formatFlags byte
-		n, err = r.Read(frameId[1:params.frameIdSize])
+		n, err = br.Read(frameId[1:params.frameIdSize])
 		if err != nil || n != int(params.frameIdSize-1) {
 			return ErrTooShort
 		}
 		i += params.frameIdSize
-		n, err = r.Read(frameSize[0:params.frameSizeSize])
+		n, err = br.Read(frameSize[0:params.frameSizeSize])
 		if err != nil || n != int(params.frameSizeSize) {
 			return ErrTooShort
 		}
 		i += params.frameSizeSize
 		if params.frameFlagsSize > 0 {
-			n, err = r.Read(frameFlags[0:params.frameFlagsSize])
+			n, err = br.Read(frameFlags[0:params.frameFlagsSize])
 			if err != nil || n != int(params.frameFlagsSize) {
 				return ErrTooShort
 			}
@@ -87,7 +89,7 @@ func (tag *Tag) readV2(path string, framesSize uint32, params *versionParams, r 
 			return ErrTooShort
 		}
 		data := make([]byte, frameLength)
-		n, err = r.Read(data)
+		n, err = br.Read(data)
 		if err != nil || n != int(frameLength) {
 			return ErrTooShort
 		}
@@ -97,13 +99,13 @@ func (tag *Tag) readV2(path string, framesSize uint32, params *versionParams, r 
 		//glog.Infof("DATA: %v", hex.EncodeToString(data))
 		factory, ok := params.frames[string(frameId[:])]
 		if !ok {
-			glog.Errorf("Unknown tag: %v for %v", string(frameId[:]), path)
+			glog.Errorf("Unknown tag: %v", string(frameId[:]))
 			glog.Errorf("DATA: %v", hex.EncodeToString(data))
 			continue
 		}
 		frame, err := factory.maker(tag, newFrameHeader(string(frameId), statusFlags, formatFlags, frameLength), data)
 		if err != nil {
-			glog.Errorf("Error parsing tag %v: %v for %v", string(frameId[:]), err, path)
+			glog.Errorf("Error parsing tag %v: %v", string(frameId[:]), err)
 			glog.Errorf("DATA: %v", hex.EncodeToString(data))
 			continue
 		}
@@ -111,23 +113,24 @@ func (tag *Tag) readV2(path string, framesSize uint32, params *versionParams, r 
 		/*
 			switch t := frame.(type) {
 			case *DataFrame:
-				//glog.Infof("DATA: %v", hex.EncodeToString(frame.Bytes()))
+				glog.Infof("DATA: %v", hex.EncodeToString(frame.Bytes()))
 			case *TextFrame:
-			//glog.Infof("TEXT %v: %v", len(t.String()), t.String())
+				glog.Infof("TEXT %v: %v", len(t.String()), t.String())
 			//for index, runeValue := range t.String() {
 			//	glog.Infof("%#U starts at byte position %d\n", runeValue, index)
 			//}
-			//case *PictureFrame:
-			//glog.Infof("PIC %v: %v", t.String(), len(t.Bytes()))
+			case *PictureFrame:
+				glog.Infof("PIC %v: %v", t.String(), len(t.Bytes()))
 			//glog.Infof("PICDATA: %v", hex.EncodeToString(t.Bytes()))
 			//out := fmt.Sprintf("%v.png", time.Now().UnixNano())
 			//glog.Infof("Wrote %v: %v", out, len(t.Bytes()))
 			//ioutil.WriteFile(out, t.Bytes(), 0)
 			case *FullTextFrame:
-				//glog.Infof("FULLTEXT %v: %v", t.Description(), t.String())
+				glog.Infof("FULLTEXT %v: %v", t.Description(), t.String())
 
 			}
 		*/
+
 		tag.addFrame(frame)
 
 	}

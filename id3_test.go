@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/davecheney/profile"
 	"github.com/golang/glog"
 )
 
@@ -29,7 +30,12 @@ func walkFunc(path string, f os.FileInfo, err error) error {
 		return nil
 	}
 	//glog.Infof("Reading %v err:%v", path, err)
-	_, err = Read(path)
+
+	r, err := os.OpenFile(path, os.O_RDONLY, 0666)
+	if err != nil {
+		return err
+	}
+	_, err = Read(r)
 	if err != nil {
 		if err == ErrNoHeader || err == ErrTooShort {
 			return nil
@@ -43,6 +49,7 @@ func walkFunc(path string, f os.FileInfo, err error) error {
 var root string
 
 func init() {
+	defer profile.Start(profile.CPUProfile).Stop()
 	flag.StringVar(&root, "root", "M:\\Music", "The root to parse")
 	flag.Parse()
 
@@ -190,7 +197,12 @@ func DontTestParse(t *testing.T) {
 			"COMMENT123456789012345678901"},
 	}
 	for _, v := range id3v1Files {
-		_, err := Read(v.path)
+		r, err := os.OpenFile(v.path, os.O_RDONLY, 0666)
+		if err != nil {
+			t.Errorf("%v: %v", v.name, err)
+			continue
+		}
+		_, err = Read(r)
 		if err != nil {
 			t.Errorf("%v: %v", v.name, err)
 		}
@@ -212,7 +224,12 @@ func DontTestParse(t *testing.T) {
 			""},
 	}
 	for _, v := range invalidFiles {
-		_, err := Read(v.path)
+		r, err := os.OpenFile(v.path, os.O_RDONLY, 0666)
+		if err != nil {
+			t.Errorf("%v: %v", v.name, err)
+			continue
+		}
+		_, err = Read(r)
 		if err != ErrNoHeader {
 			t.Errorf("%v: %v", v.name, err)
 		}
@@ -221,7 +238,11 @@ func DontTestParse(t *testing.T) {
 
 func testReadV2(testData *testData, t *testing.T) error {
 	glog.Infof("Reading %v...", testData.path)
-	tag, err := Read(testData.path)
+	r, err := os.OpenFile(testData.path, os.O_RDONLY, 0666)
+	if err != nil {
+		return err
+	}
+	tag, err := Read(r)
 	if err != nil {
 		return err
 	}

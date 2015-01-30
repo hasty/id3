@@ -3,16 +3,12 @@ package id3
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 )
 
-func Read(path string) (*Tag, error) {
+func Read(r io.ReadSeeker) (*Tag, error) {
 	//glog.Infof("READING: %v", path)
-
-	r, err := os.OpenFile(path, os.O_RDONLY, 0666)
-	if err != nil {
-		return nil, err
-	}
 
 	header, err := newHeader(r)
 	if err != nil {
@@ -41,11 +37,11 @@ func Read(path string) (*Tag, error) {
 
 	switch header.version {
 	case 2:
-		tag.readV2(path, size, version22Params, r)
+		tag.readV2(size, version22Params, r)
 	case 3:
-		tag.readV2(path, size, version23Params, r)
+		tag.readV2(size, version23Params, r)
 	case 4:
-		tag.readV2(path, size, version24Params, r)
+		tag.readV2(size, version24Params, r)
 	default:
 		return nil, errors.New(fmt.Sprintf("Unknown major revision: %v", header.version))
 	}
@@ -58,4 +54,55 @@ func Read(path string) (*Tag, error) {
 	}
 
 	return tag, nil
+}
+
+func readAll(path string, parseBoth bool) (*Tag, *Tag, error) {
+	r, err := os.OpenFile(path, os.O_RDONLY, 0666)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	header, err := newHeader(r)
+	if err != nil {
+		if err == ErrNoHeader {
+			v1, err := readv1(r)
+			return nil, v1, err
+
+		}
+		return nil, nil, err
+	}
+
+	//glog.Infof("Unsynchronized: %v", header.Unsynchronized())
+
+	var extendedHeader *ExtendedHeader
+
+	size := header.Size()
+
+	if header.HasExtendedHeader() {
+		extendedHeader, err = newExtendedHeader(r)
+		if err != nil {
+			return nil, nil, err
+		}
+		size -= extendedHeader.size
+	}
+
+	var id3v1Tag *Tag
+	tag := newTag(header, extendedHeader)
+
+	switch header.version {
+	case 2:
+		tag.readV2(size, version22Params, r)
+	case 3:
+		tag.readV2(size, version23Params, r)
+	case 4:
+		tag.readV2(size, version24Params, r)
+	default:
+		return nil, nil, errors.New(fmt.Sprintf("Unknown major revision: %v", header.version))
+	}
+
+	if parseBoth {
+		id3v1Tag, err = readv1(r)
+	}
+
+	return tag, id3v1Tag, nil
 }
