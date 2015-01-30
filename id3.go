@@ -41,13 +41,20 @@ func Read(path string) (*Tag, error) {
 
 	switch header.version {
 	case 2:
-		tag.readV2(size, version22Params, r)
+		tag.readV2(path, size, version22Params, r)
 	case 3:
-		tag.readV2(size, version23Params, r)
+		tag.readV2(path, size, version23Params, r)
 	case 4:
-		tag.readV2(size, version24Params, r)
+		tag.readV2(path, size, version24Params, r)
 	default:
 		return nil, errors.New(fmt.Sprintf("Unknown major revision: %v", header.version))
+	}
+
+	if tag.missingCoreInfo() {
+		id3v1Tag, err := readv1(r)
+		if err == nil {
+			tag.mergeTag(id3v1Tag)
+		}
 	}
 
 	return tag, nil

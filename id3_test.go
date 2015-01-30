@@ -5,6 +5,7 @@ package id3
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -27,10 +28,10 @@ func walkFunc(path string, f os.FileInfo, err error) error {
 	if f.IsDir() {
 		return nil
 	}
-	glog.Infof("Reading %v err:%v", path, err)
+	//glog.Infof("Reading %v err:%v", path, err)
 	_, err = Read(path)
 	if err != nil {
-		if err == ErrNoHeader {
+		if err == ErrNoHeader || err == ErrTooShort {
 			return nil
 		}
 		glog.Errorf("err:%v", err)
@@ -39,11 +40,20 @@ func walkFunc(path string, f os.FileInfo, err error) error {
 	return nil
 }
 
-func DontTestAll(t *testing.T) {
-	filepath.Walk("M:\\Music", walkFunc)
+var root string
+
+func init() {
+	flag.StringVar(&root, "root", "M:\\Music", "The root to parse")
+	flag.Parse()
+
 }
 
-func TestParse(t *testing.T) {
+func TestAll(t *testing.T) {
+
+	filepath.Walk(root, walkFunc)
+}
+
+func DontTestParse(t *testing.T) {
 	id3v2Files := []*testData{
 		&testData{"Simple MP3",
 			"test/test.mp3",
@@ -210,7 +220,7 @@ func TestParse(t *testing.T) {
 }
 
 func testReadV2(testData *testData, t *testing.T) error {
-	fmt.Println(testData.path)
+	glog.Infof("Reading %v...", testData.path)
 	tag, err := Read(testData.path)
 	if err != nil {
 		return err

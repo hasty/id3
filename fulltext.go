@@ -1,6 +1,11 @@
 package id3
 
-import "golang.org/x/text/language"
+import (
+	"encoding/hex"
+
+	"github.com/golang/glog"
+	"golang.org/x/text/language"
+)
 
 type FullTextFrame struct {
 	frameBase
@@ -21,12 +26,13 @@ func newFullTextFrame(tag *Tag, header *frameHeader, data []byte) (Frame, error)
 	}
 	langCode := string(data[1:4])
 
-	if langCode == "xxx" || langCode == "XXX" {
+	if langCode == "xxx" || langCode == "XXX" || langCode == "\x00\x00\x00" {
 		langCode = "ENG"
 	}
 
 	ftf.language, err = language.ParseBase(langCode)
 	if err != nil {
+		glog.Errorf("Bad language: %v %v", langCode, hex.EncodeToString(data))
 		return nil, err
 	}
 
@@ -42,9 +48,11 @@ func newFullTextFrame(tag *Tag, header *frameHeader, data []byte) (Frame, error)
 	if err != nil {
 		return nil, err
 	}
-	ftf.description, err = decodeString(text, encoding)
-	if err != nil {
-		return nil, err
+	if len(text) > 0 {
+		ftf.text, err = decodeString(text, encoding)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return ftf, nil
 }
@@ -71,9 +79,11 @@ func newDescribedFrame(tag *Tag, header *frameHeader, data []byte) (Frame, error
 	if err != nil {
 		return nil, err
 	}
-	ftf.description, err = decodeString(text, encoding)
-	if err != nil {
-		return nil, err
+	if len(text) > 0 {
+		ftf.text, err = decodeString(text, encoding)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return ftf, nil
 }

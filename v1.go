@@ -14,6 +14,9 @@ const (
 func readv1(r io.ReadSeeker) (*Tag, error) {
 	_, err := r.Seek(-v1TagSize, os.SEEK_END)
 	if err != nil {
+		if strings.HasSuffix(err.Error(), "An attempt was made to move the file pointer before the beginning of the file.") {
+			return nil, ErrTooShort
+		}
 		return nil, err
 	}
 

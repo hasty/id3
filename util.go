@@ -3,9 +3,11 @@ package id3
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"io/ioutil"
 
+	"github.com/golang/glog"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/encoding/unicode"
@@ -80,6 +82,7 @@ func decodeString(data []byte, encoding encoding.Encoding) (string, error) {
 		reader := transform.NewReader(bytes.NewReader(data), encoding.NewDecoder())
 		n, err := ioutil.ReadAll(reader)
 		if err != nil {
+			glog.Errorf("Error parsing %v: %v", hex.EncodeToString(data), err)
 			return "", err
 		}
 		data = n

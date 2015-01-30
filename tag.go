@@ -99,3 +99,25 @@ func (tag *Tag) Comments() []string {
 	}
 	return []string{}
 }
+
+func (tag *Tag) missingCoreInfo() bool {
+	return tag.albumFrame == nil || tag.artistFrame == nil || tag.genreFrame == nil || tag.titleFrame == nil || tag.yearFrame == nil
+}
+
+func (tag *Tag) mergeTag(tag2 *Tag) {
+	if tag.albumFrame == nil && tag2.albumFrame != nil {
+		tag.albumFrame = tag2.albumFrame
+	}
+	if tag.artistFrame == nil && tag2.artistFrame != nil {
+		tag.artistFrame = tag2.artistFrame
+	}
+	if tag.genreFrame == nil && tag2.genreFrame != nil {
+		tag.genreFrame = tag2.genreFrame
+	}
+	if tag.titleFrame == nil && tag2.titleFrame != nil {
+		tag.titleFrame = tag2.titleFrame
+	}
+	if tag.yearFrame == nil && tag2.yearFrame != nil {
+		tag.yearFrame = tag2.yearFrame
+	}
+}

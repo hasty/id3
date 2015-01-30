@@ -2,6 +2,7 @@ package id3
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"io"
 	"os"
 
@@ -26,7 +27,7 @@ type versionParams struct {
 	frames             map[string]*frameFactory
 }
 
-func (tag *Tag) readV2(framesSize uint32, params *versionParams, r io.ReadSeeker) error {
+func (tag *Tag) readV2(path string, framesSize uint32, params *versionParams, r io.ReadSeeker) error {
 	var i uint32
 	var n int
 	var err error
@@ -96,33 +97,37 @@ func (tag *Tag) readV2(framesSize uint32, params *versionParams, r io.ReadSeeker
 		//glog.Infof("DATA: %v", hex.EncodeToString(data))
 		factory, ok := params.frames[string(frameId[:])]
 		if !ok {
-			glog.Errorf("Unknown tag: %v", string(frameId[:]))
+			glog.Errorf("Unknown tag: %v for %v", string(frameId[:]), path)
+			glog.Errorf("DATA: %v", hex.EncodeToString(data))
 			continue
 		}
 		frame, err := factory.maker(tag, newFrameHeader(string(frameId), statusFlags, formatFlags, frameLength), data)
 		if err != nil {
-			glog.Errorf("Error parsing tag: %v", err)
+			glog.Errorf("Error parsing tag %v: %v for %v", string(frameId[:]), err, path)
+			glog.Errorf("DATA: %v", hex.EncodeToString(data))
 			continue
 		}
 
-		switch t := frame.(type) {
-		case *DataFrame:
-			//glog.Infof("DATA: %v", hex.EncodeToString(frame.Bytes()))
-		case *TextFrame:
-		//glog.Infof("TEXT %v: %v", len(t.String()), t.String())
-		//for index, runeValue := range t.String() {
-		//	glog.Infof("%#U starts at byte position %d\n", runeValue, index)
-		//}
-		/*case *PictureFrame:
-		glog.Infof("PIC %v: %v", t.String(), len(t.Bytes()))
-		glog.Infof("PICDATA: %v", hex.EncodeToString(t.Bytes()))
-		out := fmt.Sprintf("%v.png", time.Now().UnixNano())
-		glog.Infof("Wrote %v: %v", out, len(t.Bytes()))
-		ioutil.WriteFile(out, t.Bytes(), 0)*/
-		case *FullTextFrame:
-			glog.Infof("FULLTEXT %v: %v", t.Description(), t.String())
+		/*
+			switch t := frame.(type) {
+			case *DataFrame:
+				//glog.Infof("DATA: %v", hex.EncodeToString(frame.Bytes()))
+			case *TextFrame:
+			//glog.Infof("TEXT %v: %v", len(t.String()), t.String())
+			//for index, runeValue := range t.String() {
+			//	glog.Infof("%#U starts at byte position %d\n", runeValue, index)
+			//}
+			//case *PictureFrame:
+			//glog.Infof("PIC %v: %v", t.String(), len(t.Bytes()))
+			//glog.Infof("PICDATA: %v", hex.EncodeToString(t.Bytes()))
+			//out := fmt.Sprintf("%v.png", time.Now().UnixNano())
+			//glog.Infof("Wrote %v: %v", out, len(t.Bytes()))
+			//ioutil.WriteFile(out, t.Bytes(), 0)
+			case *FullTextFrame:
+				//glog.Infof("FULLTEXT %v: %v", t.Description(), t.String())
 
-		}
+			}
+		*/
 		tag.addFrame(frame)
 
 	}
